@@ -1,3 +1,7 @@
+/* Copyright (c) 2018 KrossX <krossx@live.com>
+ * License: http://www.opensource.org/licenses/mit-license.html  MIT License
+ */
+
 #include <windows.h>
 #include <stdio.h>
 
