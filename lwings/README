@@ -1,0 +1,60 @@
+===============================================================================
+Legendary Wings for PC
+===============================================================================
+
+A version of the NES game Legendary Wings for PC. It's only the first section
+and no dungeons. It's made for Windows with OpenGL 1.1 and C with the binaries
+compiled using MSVC6.
+
+Audio is handled through the BASS library, with a slight panning effect while
+at it, and textures are loaded using the LodePNG library. Indexed PNGs take
+quite the little space for this kind of assets.
+
+-------------------------------------------------------------------------------
+Controls
+-------------------------------------------------------------------------------
+
+General:
+	ESC - Exit
+	F1 - Toggle FPS display
+	F2 - Toggle Vsync
+	Double Click - Toggle Fullscreen
+	ALT + ENTER  - Toggle Fullscreen
+
+Player1:
+	ARROWS - Up, Left, Down, Right
+	Z - Button B
+	X - Button A
+	ENTER - Start
+
+Player2:
+	WSAD - Up, Left, Down, Right
+	F - Button B
+	G - Button A
+	ENTER - Start
+
+Joy2Key is a good option for controller usage.
+
+-------------------------------------------------------------------------------
+License / Disclaimer
+-------------------------------------------------------------------------------
+
+Copyright (c) 2018 KrossX <krossx@live.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
