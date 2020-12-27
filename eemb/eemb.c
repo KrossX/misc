@@ -1,3 +1,7 @@
+/* Copyright (c) 2020 KrossX <krossx@live.com>
+ * License: http://www.opensource.org/licenses/mit-license.html  MIT License
+ */
+
 #include <windows.h>
 
 void *mem_ptr;
