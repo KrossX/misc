@@ -123,7 +123,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, char *cmdline, int cmdshow)
 		
 		ResetEvent(evt_wait[id]);
 
-		if(read_evt_log(evt_log[id], EVENTLOG_SEQUENTIAL_READ | EVENTLOG_FORWARDS_READ, 0)) {
+		while(read_evt_log(evt_log[id], EVENTLOG_SEQUENTIAL_READ | EVENTLOG_FORWARDS_READ, 0)) {
 			EVENTLOGRECORD *evt_info = (EVENTLOGRECORD*)mem_ptr;
 			char *evt_strings = (char*)mem_ptr + evt_info->StringOffset;
 			char *evt_source = (char*)mem_ptr + sizeof(EVENTLOGRECORD);
