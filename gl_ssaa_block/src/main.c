@@ -490,6 +490,28 @@ void prepare_triangle(void)
 #define GL_LINK_STATUS     0x8B82
 #define GL_GEOMETRY_SHADER 0x8DD9
 
+void dump_shader(char *str, char *err)
+{
+	char filename[64];
+	int index = 0;
+	HANDLE file;
+	DWORD written;
+
+	while(index < 9999) {
+		wsprintf(filename, "dumpshader%04d.txt", index++);
+		file = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		if(file != INVALID_HANDLE_VALUE) break;
+		if(GetLastError() == ERROR_ALREADY_EXISTS) continue;
+	}
+	
+	if(file == INVALID_HANDLE_VALUE) return;
+	
+	WriteFile(file, str, strlen(str), &written, NULL);
+	WriteFile(file, err, strlen(err), &written, NULL);
+
+	CloseHandle(file);
+}
+
 GLuint compile_shader(GLenum type, char *str)
 {
 	int success;
@@ -502,6 +524,7 @@ GLuint compile_shader(GLenum type, char *str)
 		static char buffer[4096];
 		glGetShaderInfoLog(shader, 4096, NULL, buffer);
 		MessageBoxA(NULL, buffer, "Shader compilation error!", MB_OK);
+		dump_shader(str, buffer);
 		glDeleteShader(shader);
 		shader = 0;
 	}
