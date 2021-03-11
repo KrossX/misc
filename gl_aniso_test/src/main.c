@@ -429,6 +429,7 @@ void draw_debug_text(void)
 		if(len > maxlen) maxlen = len;
 	}
 
+	if(maxlen < 41) maxlen = 41;
 	draw_debug_text_bg(0, blacksz, maxlen * 8.0f + 16.0f, blacksz);
 	glColor4f(1,1,0.3f,1);
 
