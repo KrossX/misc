@@ -478,7 +478,7 @@ void prepare_triangle(void)
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_triangle);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_STATIC_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(data[0]), (GLvoid*)0);
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(data[0]), (GLvoid*)8);
+	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(data[0]), (GLvoid*)8);
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -566,7 +566,7 @@ void prepare_triangle_shader(void)
 	txt_pos += wsprintf(txt_pos,
 		"#version 420 core\n"
 		"layout (location = 0) in vec2 pos;\n"
-		"layout (location = 1) in uint col;\n");
+		"layout (location = 1) in vec4 col;\n");
 		
 	if(sset.iblock) {
 		txt_pos += wsprintf(txt_pos,
@@ -593,7 +593,7 @@ void prepare_triangle_shader(void)
 		"	npos.x = pos.x * cos(angle) - pos.y * sin(angle);\n"
 		"	npos.y = pos.x * sin(angle) + pos.y * cos(angle);\n"
 		"	gl_Position = vec4(npos * aspect, 0, 1);\n"
-		"	color = vec4((col&0xFF)/255.0, ((col>>8)&0xFF)/255.0, ((col>>16)&0xFF)/255.0, 1);\n"
+		"	color = col;\n"
 		"	tcoord = pos * 2.0;\n"
 		"}\n\0");
 
@@ -706,7 +706,7 @@ void prepare_text_shader(void)
 	wsprintf(txt_buffer,
 		"#version 420 core\n"
 		"layout (location = 0) in vec2 in_pos;\n"
-		"layout (location = 1) in uint in_col;\n"
+		"layout (location = 1) in vec4 in_col;\n"
 		"layout (location = 2) in uint in_id;\n"
 		"out vec4 v_color;\n"
 		"out uint v_id;\n"
@@ -714,7 +714,7 @@ void prepare_text_shader(void)
 		"void main()\n"
 		"{\n"
 		"	gl_Position = vec4(in_pos * scale + vec2(-1, 1), 0, 1);\n"
-		"	v_color = vec4((in_col&0xFF)/255.0, ((in_col>>8)&0xFF)/255.0, ((in_col>>16)&0xFF)/255.0, 1);\n"
+		"	v_color = in_col;\n"
 		"	v_id = in_id;\n"
 		"}\n\0");
 	vert = compile_shader(GL_VERTEX_SHADER, txt_buffer);
@@ -823,7 +823,7 @@ void prepare_text_buffers(void)
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_text);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vtxt_buff), vtxt_buff, GL_STREAM_DRAW);
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(vtxt_buff[0]), (GLvoid*)0);
-	glVertexAttribIPointer(1, 1, GL_UNSIGNED_INT, sizeof(vtxt_buff[0]), (GLvoid*)8);
+	glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(vtxt_buff[0]), (GLvoid*)8);
 	glVertexAttribIPointer(2, 1, GL_UNSIGNED_INT, sizeof(vtxt_buff[0]), (GLvoid*)12);
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
