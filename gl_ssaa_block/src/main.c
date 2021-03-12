@@ -592,10 +592,10 @@ void prepare_triangle_shader(void)
 		"	vec2 npos;\n"
 		"	npos.x = pos.x * cos(angle) - pos.y * sin(angle);\n"
 		"	npos.y = pos.x * sin(angle) + pos.y * cos(angle);\n"
-		"   gl_Position = vec4(npos * aspect, 0, 1);\n"
+		"	gl_Position = vec4(npos * aspect, 0, 1);\n"
 		"	color = vec4((col&0xFF)/255.0, ((col>>8)&0xFF)/255.0, ((col>>16)&0xFF)/255.0, 1);\n"
 		"	tcoord = pos * 2.0;\n"
-		"}\0");
+		"}\n\0");
 
 	vert = compile_shader(GL_VERTEX_SHADER, txt_buffer);
 
@@ -626,8 +626,8 @@ void prepare_triangle_shader(void)
 		"void main()\n"
 		"{\n"
 		"	vec4 tcolor = vec4(texture(tex, tcoord).rrr, 1);\n"
-		"   frag_color = color * (1 + tcolor) * 0.5;\n"
-		"}\0");
+		"	frag_color = color * (1 + tcolor) * 0.5;\n"
+		"}\n\0");
 
 	frag = compile_shader(GL_FRAGMENT_SHADER, txt_buffer);
 	
@@ -713,10 +713,10 @@ void prepare_text_shader(void)
 		"uniform vec2 scale;\n"
 		"void main()\n"
 		"{\n"
-		"   gl_Position = vec4(in_pos * scale + vec2(-1, 1), 0, 1);\n"
+		"	gl_Position = vec4(in_pos * scale + vec2(-1, 1), 0, 1);\n"
 		"	v_color = vec4((in_col&0xFF)/255.0, ((in_col>>8)&0xFF)/255.0, ((in_col>>16)&0xFF)/255.0, 1);\n"
 		"	v_id = in_id;\n"
-		"}\0");
+		"}\n\0");
 	vert = compile_shader(GL_VERTEX_SHADER, txt_buffer);
 	
 	ZeroMemory(txt_buffer, 4096);
@@ -750,7 +750,7 @@ void prepare_text_shader(void)
 		"	gl_Position = gl_in[0].gl_Position + vec4(8*scale,0,0);\n"
 		"	EmitVertex();\n"
 		"	EndPrimitive();\n"
-		"}\0");
+		"}\n\0");
 	geom = compile_shader(GL_GEOMETRY_SHADER, txt_buffer);
 
 	ZeroMemory(txt_buffer, 4096);
@@ -764,8 +764,8 @@ void prepare_text_shader(void)
 		"{\n"
 		"	float tcolor = texture(tex, tcoord).r;\n"
 		"	if(tcolor < 0.5) discard;\n"
-		"   frag_color = fcolor;\n"
-		"}\0");
+		"	frag_color = fcolor;\n"
+		"}\n\0");
 	frag = compile_shader(GL_FRAGMENT_SHADER, txt_buffer);
 
 	glDeleteProgram(program_text);
@@ -789,8 +789,8 @@ void prepare_text_bg_shader(void)
 		"uniform vec2 scale;\n"
 		"void main()\n"
 		"{\n"
-		"   gl_Position = vec4(in_pos * scale + vec2(-1, 1), 0, 1);\n"
-		"}\0");
+		"	gl_Position = vec4(in_pos * scale + vec2(-1, 1), 0, 1);\n"
+		"}\n\0");
 	vert = compile_shader(GL_VERTEX_SHADER, txt_buffer);
 	
 	ZeroMemory(txt_buffer, 4096);
@@ -799,8 +799,8 @@ void prepare_text_bg_shader(void)
 		"out vec4 frag_color;\n"
 		"void main()\n"
 		"{\n"
-		"   frag_color = vec4(0,0,0,0.5);\n"
-		"}\0");
+		"	frag_color = vec4(0,0,0,0.5);\n"
+		"}\n\0");
 	frag = compile_shader(GL_FRAGMENT_SHADER, txt_buffer);
 
 	glDeleteProgram(program_text_bg);
