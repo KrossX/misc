@@ -19,14 +19,40 @@ int wnd_wmin, wnd_hmin;
 GLfloat wnd_width, wnd_height, wnd_scale, wnd_ox, wnd_oy;
 GLuint tex_font, tex_xor;
 
-GLuint tex_min_filter = GL_LINEAR;
-GLuint tex_mag_filter = GL_LINEAR;
+int tex_min_filter = 5;
+int tex_mag_filter = 1;
 GLfloat tex_anisotropic = 1.0f;
 
 int aniso_ext_found = 0;
 int aniso_arb_found = 0;
 int aniso_supported = 0;
 float aniso_max = 1.0f;
+
+char* tex_filter_str(int filter)
+{
+	switch(filter) {
+		case 0: return "NEAREST";
+		case 1: return "LINEAR ";
+		case 2: return "N_MIP_N";
+		case 3: return "L_MIP_N";
+		case 4: return "N_MIP_L";
+		case 5: return "L_MIP_L";
+		default:return "UNK    ";
+	}
+}
+
+GLuint tex_filter_val(int filter)
+{
+	switch(filter) {
+		case 0: return GL_NEAREST;
+		case 1: return GL_LINEAR;
+		case 2: return GL_NEAREST_MIPMAP_NEAREST;
+		case 3: return GL_LINEAR_MIPMAP_NEAREST;
+		case 4: return GL_NEAREST_MIPMAP_LINEAR;
+		case 5: return GL_LINEAR_MIPMAP_LINEAR;
+		default: return 0;
+	}
+}
 
 void toggle_fullscreen(HWND wnd)
 {
@@ -165,18 +191,19 @@ LRESULT CALLBACK wndproc(HWND wnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	case WM_KEYDOWN:
 		switch(wparam) {
 		case VK_F1 :
-			tex_min_filter = tex_min_filter == GL_NEAREST ? GL_LINEAR : GL_NEAREST;
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex_min_filter);
+			tex_min_filter = (tex_min_filter+1)%6;
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex_filter_val(tex_min_filter));
 			break;
 
 		case VK_F2 :
-			tex_mag_filter = tex_mag_filter == GL_NEAREST ? GL_LINEAR : GL_NEAREST;
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex_mag_filter);
+			tex_mag_filter = (tex_mag_filter+1)%2;
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex_filter_val(tex_mag_filter));
 			break;
 
 		case VK_F3 :
 			if(!aniso_supported) break;
-			tex_anisotropic = tex_anisotropic == 1.0f ? aniso_max : 1.0f;
+			tex_anisotropic = tex_anisotropic + 1.0f;
+			if(tex_anisotropic > aniso_max) tex_anisotropic = 1.0f;
 			glTexParameterf(GL_TEXTURE_2D, 0x84FE, tex_anisotropic);
 			break;
 		}
@@ -354,19 +381,46 @@ void draw_texture(void)
 	check_error();
 }
 
+#define TEXSIZE 32
+u32 texbuf[TEXSIZE*TEXSIZE];
+
 GLuint generate_xor_texture(void)
 {
-	u8 buffer[16] = {0, -1, 0, -1, -1, 0, -1, 0, 0, -1, 0, -1, -1, 0, -1, 0};
-	GLuint texture = 0;
+	u32 color[4][2] = {{0xFF000000, 0xFFFFFFFF},
+					   {0xFF00007F, 0xFF7F7FFF},
+					   {0xFF007F00, 0xFF7FFF7F},
+					   {0xFF7F0000, 0xFFFF7F7F}};
 
+	GLsizei size = TEXSIZE;
+	GLint level = 0;
+	int color_index = 0;
+
+	GLuint texture = 0;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex_mag_filter);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex_min_filter);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex_filter_val(tex_mag_filter));
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex_filter_val(tex_min_filter));
 		if(aniso_supported) glTexParameterf(GL_TEXTURE_2D, 0x84FE, tex_anisotropic);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_LUMINANCE, 4, 4, 0, GL_LUMINANCE, GL_UNSIGNED_BYTE, buffer);
+
+		while(size >= 1) {
+			int sizeh = size/2;
+			int x,y;
+			for(y = 0; y < size; y++)
+			for(x = 0; x < size; x++) {
+				texbuf[y * size + x] = color[level&3][(x<sizeh)^(y<sizeh)];
+			}
+
+			if(size == 1){
+				texbuf[0] = 0xFF7FFFFF;
+			}
+
+			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, texbuf);
+			size >>= 1;
+			level++;
+		}
+
 	glBindTexture(GL_TEXTURE_2D, 0);
 	return texture;
 }
@@ -483,6 +537,8 @@ void check_aniso_support(void)
 	}
 }
 
+
+
 int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, char *cmdline, int cmdshow)
 {
 	MSG msg;
@@ -524,8 +580,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, char *cmdline, int cmdshow)
 				draw_debug_text();
 				glColor4f(1,1,0.7f,1);
 				draw_string(8,8,"Toggle Filters (F1)MIN:%s (F2)MAG:%s (F3)Aniso:%d",
-					tex_min_filter == GL_NEAREST ? "NEAREST" : "LINEAR ",
-					tex_mag_filter == GL_NEAREST ? "NEAREST" : "LINEAR ", (int)tex_anisotropic);
+					tex_filter_str(tex_min_filter),
+					tex_filter_str(tex_mag_filter), (int)tex_anisotropic);
 
 				glColor4f(1,0.5f,0.5f,1);
 				draw_string(160,8,"MIN             MAG             Aniso");
