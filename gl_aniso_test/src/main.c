@@ -17,10 +17,11 @@ HGLRC ren_ctx;
 
 int wnd_wmin, wnd_hmin;
 GLfloat wnd_width, wnd_height, wnd_scale, wnd_ox, wnd_oy;
-GLuint tex_font, tex_xor;
+GLuint tex_font, tex_zero, tex_mip1, tex_mipf;
+int texture_current = 0;
 
-int tex_min_filter = 5;
-int tex_mag_filter = 1;
+int tex_min_filter = 0;
+int tex_mag_filter = 0;
 GLfloat tex_anisotropic = 1.0f;
 
 int aniso_ext_found = 0;
@@ -50,6 +51,26 @@ GLuint tex_filter_val(int filter)
 		case 3: return GL_LINEAR_MIPMAP_NEAREST;
 		case 4: return GL_NEAREST_MIPMAP_LINEAR;
 		case 5: return GL_LINEAR_MIPMAP_LINEAR;
+		default: return 0;
+	}
+}
+
+char* texture_str(int filter)
+{
+	switch(filter) {
+		case 0: return "LEVEL0  ";
+		case 1: return "LEVEL0+1";
+		case 2: return "LEVELALL";
+		default:return "UNK    ";
+	}
+}
+
+GLuint texture_val(int filter)
+{
+	switch(filter) {
+		case 0: return tex_zero;
+		case 1: return tex_mip1;
+		case 2: return tex_mipf;
 		default: return 0;
 	}
 }
@@ -191,20 +212,22 @@ LRESULT CALLBACK wndproc(HWND wnd, UINT msg, WPARAM wparam, LPARAM lparam)
 	case WM_KEYDOWN:
 		switch(wparam) {
 		case VK_F1 :
+			//tex_min_filter = texture_current == 2? (tex_min_filter+1)%6 : (tex_min_filter+1)%2;
 			tex_min_filter = (tex_min_filter+1)%6;
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex_filter_val(tex_min_filter));
 			break;
 
 		case VK_F2 :
 			tex_mag_filter = (tex_mag_filter+1)%2;
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex_filter_val(tex_mag_filter));
 			break;
 
 		case VK_F3 :
 			if(!aniso_supported) break;
 			tex_anisotropic = tex_anisotropic + 1.0f;
 			if(tex_anisotropic > aniso_max) tex_anisotropic = 1.0f;
-			glTexParameterf(GL_TEXTURE_2D, 0x84FE, tex_anisotropic);
+			break;
+		case VK_F4 :
+			texture_current = (texture_current + 1)%3;
+			//if(texture_current != 2 && tex_min_filter > 1) tex_min_filter = tex_min_filter%2;
 			break;
 		}
 
@@ -377,14 +400,12 @@ void draw_texture(void)
 		glTexCoord2f(500 * 8,   0 * 8); glVertex3f( 500,  -1,   -1);
 		glTexCoord2f(500 * 8, 800 * 8); glVertex3f( 500, 799, -901);
 	glEnd();
-
-	check_error();
 }
 
-#define TEXSIZE 32
+#define TEXSIZE 8
 u32 texbuf[TEXSIZE*TEXSIZE];
 
-GLuint generate_xor_texture(void)
+GLuint generate_texture(GLint max_level)
 {
 	u32 color[4][2] = {{0xFF000000, 0xFFFFFFFF},
 					   {0xFF00007F, 0xFF7F7FFF},
@@ -412,13 +433,12 @@ GLuint generate_xor_texture(void)
 				texbuf[y * size + x] = color[level&3][(x<sizeh)^(y<sizeh)];
 			}
 
-			if(size == 1){
-				texbuf[0] = 0xFF7FFFFF;
-			}
-
 			glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, size, size, 0, GL_RGBA, GL_UNSIGNED_BYTE, texbuf);
 			size >>= 1;
 			level++;
+
+			if(max_level >= 0 && level > max_level)
+				break;
 		}
 
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -557,7 +577,9 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, char *cmdline, int cmdshow)
 
 	glEnable(GL_TEXTURE_2D);
 	tex_font = load_font_texture();
-	tex_xor  = generate_xor_texture();
+	tex_zero = generate_texture(0);
+	tex_mip1 = generate_texture(1);
+	tex_mipf = generate_texture(-1);
 
 	glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
 
@@ -570,6 +592,13 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, char *cmdline, int cmdshow)
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			proj_perspective();
+
+			glBindTexture(GL_TEXTURE_2D, texture_val(texture_current));
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex_filter_val(tex_min_filter));
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex_filter_val(tex_mag_filter));
+			if(aniso_supported)
+				glTexParameterf(GL_TEXTURE_2D, 0x84FE, tex_anisotropic);
+
 			draw_texture();
 
 			glPushMatrix();
@@ -579,16 +608,16 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, char *cmdline, int cmdshow)
 				glBindTexture(GL_TEXTURE_2D, tex_font);
 				draw_debug_text();
 				glColor4f(1,1,0.7f,1);
-				draw_string(8,8,"Toggle Filters (F1)MIN:%s (F2)MAG:%s (F3)Aniso:%d",
+				draw_string(8,8,"(F1)MIN:%s (F2)MAG:%s (F3)Aniso:%2d (F4)Tex:%s",
 					tex_filter_str(tex_min_filter),
-					tex_filter_str(tex_mag_filter), (int)tex_anisotropic);
+					tex_filter_str(tex_mag_filter),
+					(int)tex_anisotropic,
+					texture_str(texture_current));
 
 				glColor4f(1,0.5f,0.5f,1);
-				draw_string(160,8,"MIN             MAG             Aniso");
-				
-				glBindTexture(GL_TEXTURE_2D, tex_xor);
+				draw_string(40,8,"MIN             MAG             Aniso        Tex");
 			glPopMatrix();
-
+			//check_error();
 			SwapBuffers(dev_ctx);
 		}
 	}
